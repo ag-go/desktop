@@ -3,21 +3,47 @@ package desktop
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
+type EntryType int
+
+const (
+	Unknown EntryType = iota
+	Application
+	Link
+	Directory
+)
+
+func (t EntryType) String() string {
+	switch t {
+	case Unknown:
+		return "Unknown"
+	case Application:
+		return "Application"
+	case Link:
+		return "Link"
+	case Directory:
+		return "Directory"
+	}
+
+	return strconv.Itoa(int(t))
+}
+
 var (
 	entryHeader      = []byte("[desktop entry]")
+	entryType        = []byte("type=")
 	entryName        = []byte("name=")
 	entryGenericName = []byte("genericname=")
 	entryComment     = []byte("comment=")
 	entryIcon        = []byte("icon=")
 	entryPath        = []byte("path=")
 	entryExec        = []byte("exec=")
+	entryURL         = []byte("url=")
 	entryTerminal    = []byte("terminal=true")
 	entryNoDisplay   = []byte("nodisplay=true")
 	entryHidden      = []byte("hidden=true")
@@ -34,42 +60,16 @@ var quotes = map[string]string{
 	`\\\\\\\\`:   `\\\\`,
 }
 
-func UnquoteExec(ex string) string {
-	for qs, qr := range quotes {
-		ex = strings.ReplaceAll(ex, qs, qr)
-	}
-
-	return ex
-}
-
 type Entry struct {
+	Type        EntryType
 	Name        string
 	GenericName string
 	Comment     string
 	Icon        string
 	Path        string
 	Exec        string
+	URL         string
 	Terminal    bool
-}
-
-func (e *Entry) String() string {
-	name := ""
-	if e.Name != "" {
-		name = e.Name
-	}
-	if e.GenericName != "" {
-		if name != "" {
-			name += " / "
-		}
-		name += e.GenericName
-	}
-
-	comment := "no comment"
-	if e.Comment != "" {
-		comment = e.Comment
-	}
-
-	return fmt.Sprintf("{%s - %s}", name, comment)
 }
 
 func (e *Entry) ExpandExec(args string) string {
@@ -79,6 +79,14 @@ func (e *Entry) ExpandExec(args string) string {
 	ex = strings.ReplaceAll(ex, "%f", args)
 	ex = strings.ReplaceAll(ex, "%U", args)
 	ex = strings.ReplaceAll(ex, "%u", args)
+
+	return ex
+}
+
+func unquoteExec(ex string) string {
+	for qs, qr := range quotes {
+		ex = strings.ReplaceAll(ex, qs, qr)
+	}
 
 	return ex
 }
@@ -109,6 +117,16 @@ func Parse(content io.Reader) (*Entry, error) {
 			} else {
 				break // Start of new section
 			}
+		} else if scannedBytesLen >= 6 && bytes.EqualFold(scannedBytes[0:5], entryType) {
+			t := strings.ToLower(string(scannedBytes[5:]))
+			switch t {
+			case "application":
+				entry.Type = Application
+			case "link":
+				entry.Type = Link
+			case "directory":
+				entry.Type = Directory
+			}
 		} else if scannedBytesLen >= 6 && bytes.EqualFold(scannedBytes[0:5], entryName) {
 			entry.Name = string(scannedBytes[5:])
 		} else if scannedBytesLen >= 13 && bytes.EqualFold(scannedBytes[0:12], entryGenericName) {
@@ -120,7 +138,9 @@ func Parse(content io.Reader) (*Entry, error) {
 		} else if scannedBytesLen >= 6 && bytes.EqualFold(scannedBytes[0:5], entryPath) {
 			entry.Path = string(scannedBytes[5:])
 		} else if scannedBytesLen >= 6 && bytes.EqualFold(scannedBytes[0:5], entryExec) {
-			entry.Exec = UnquoteExec(string(scannedBytes[5:]))
+			entry.Exec = unquoteExec(string(scannedBytes[5:]))
+		} else if scannedBytesLen >= 5 && bytes.EqualFold(scannedBytes[0:4], entryURL) {
+			entry.URL = string(scannedBytes[4:])
 		} else if scannedBytesLen == 13 && bytes.EqualFold(scannedBytes, entryTerminal) {
 			entry.Terminal = true
 		} else if (scannedBytesLen == 14 && bytes.EqualFold(scannedBytes, entryNoDisplay)) || (scannedBytesLen == 11 && bytes.EqualFold(scannedBytes, entryHidden)) {

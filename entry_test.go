@@ -3,6 +3,7 @@ package desktop
 import (
 	"io"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -12,15 +13,14 @@ type testData struct {
 }
 
 var testCases = []*testData{
-	{Filename: "alacritty.desktop", Entry: &Entry{Name: "Alacritty", GenericName: "Terminal", Comment: "A cross-platform, GPU enhanced terminal emulator", Icon: "Alacritty", Path: "/home/test", Exec: "alacritty", Terminal: false}},
-	{Filename: "vim.desktop", Entry: &Entry{Name: "Vim", GenericName: "Text Editor", Comment: "Edit text files", Icon: "gvim", Exec: "vim %F", Terminal: true}},
-	{Filename: "nodisplay.desktop", Entry: nil},
+	{Filename: "app-alacritty.desktop", Entry: &Entry{Type: Application, Name: "Alacritty", GenericName: "Terminal", Comment: "A cross-platform, GPU enhanced terminal emulator", Icon: "Alacritty", Path: "/home/test", Exec: "alacritty"}},
+	{Filename: "app-vim.desktop", Entry: &Entry{Type: Application, Name: "Vim", GenericName: "Text Editor", Comment: "Edit text files", Icon: "gvim", Exec: "vim %F", Terminal: true}},
+	{Filename: "app-vim-nodisplay.desktop", Entry: nil},
+	{Filename: "link-google.desktop", Entry: &Entry{Type: Link, Name: "Link to Google", Icon: "text-html", URL: "https://google.com"}},
 }
 
 func TestParse(t *testing.T) {
 	for _, c := range testCases {
-		expected := c.Entry
-
 		f, err := os.OpenFile("test/"+c.Filename, os.O_RDONLY, 0644)
 		if err != nil {
 			t.Fatal(err)
@@ -32,40 +32,8 @@ func TestParse(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if entry == nil || expected == nil {
-			if entry != expected {
-				t.Fatalf("%s: entry incorrect: got %#v, want %#v", f.Name(), entry, expected)
-			}
-
-			continue
-		}
-
-		if entry.Name != expected.Name {
-			t.Fatalf("%s: name incorrect: got %s, want %s", f.Name(), entry.Name, expected.Name)
-		}
-
-		if entry.GenericName != expected.GenericName {
-			t.Fatalf("%s: generic name incorrect: got %s, want %s", f.Name(), entry.GenericName, expected.GenericName)
-		}
-
-		if entry.Comment != expected.Comment {
-			t.Fatalf("%s: comment incorrect: got %s, want %s", f.Name(), entry.Comment, expected.Comment)
-		}
-
-		if entry.Icon != expected.Icon {
-			t.Fatalf("%s: icon incorrect: got %s, want %s", f.Name(), entry.Icon, expected.Icon)
-		}
-
-		if entry.Path != expected.Path {
-			t.Fatalf("%s: Path incorrect: got %s, want %s", f.Name(), entry.Path, expected.Path)
-		}
-
-		if entry.Exec != expected.Exec {
-			t.Fatalf("%s: Exec incorrect: got %s, want %s", f.Name(), entry.Exec, expected.Exec)
-		}
-
-		if entry.Terminal != expected.Terminal {
-			t.Fatalf("%s: terminal incorrect: got %v, want %v", f.Name(), entry.Terminal, expected.Terminal)
+		if !reflect.DeepEqual(entry, c.Entry) {
+			t.Fatalf("%s: entry incorrect: got %#v, want %#v", f.Name(), entry, c.Entry)
 		}
 	}
 }
