@@ -20,13 +20,19 @@ var testCases = []*testData{
 }
 
 func TestParse(t *testing.T) {
+	var (
+		buf   = make([]byte, bufferSize)
+		f     *os.File
+		entry *Entry
+		err   error
+	)
 	for _, c := range testCases {
-		f, err := os.OpenFile("test/"+c.Filename, os.O_RDONLY, 0644)
+		f, err = os.OpenFile("test/"+c.Filename, os.O_RDONLY, 0644)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		entry, err := Parse(f)
+		entry, err = Parse(f, buf)
 		f.Close()
 		if err != nil {
 			t.Fatal(err)
@@ -39,32 +45,41 @@ func TestParse(t *testing.T) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	var files []*os.File
+	var (
+		buf   = make([]byte, bufferSize)
+		files = make([]*os.File, len(testCases))
+		entry *Entry
+		err   error
+	)
 	defer func() {
 		for _, f := range files {
 			f.Close()
 		}
 	}()
 
-	for _, c := range testCases {
+	for i, c := range testCases {
 		f, err := os.OpenFile("test/"+c.Filename, os.O_RDONLY, 0644)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		files = append(files, f)
+		files[i] = f
 	}
 
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, f := range files {
+		for ci, f := range files {
 			b.StartTimer()
-			_, err := Parse(f)
+			entry, err = Parse(f, buf)
 			if err != nil {
 				b.Fatal(err)
 			}
 			b.StopTimer()
+
+			if !reflect.DeepEqual(entry, testCases[ci].Entry) {
+				b.Fatalf("%s: entry incorrect: got %#v, want %#v", f.Name(), entry, testCases[ci].Entry)
+			}
 
 			_, err = f.Seek(0, io.SeekStart)
 			if err != nil {

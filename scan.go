@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+const bufferSize = 32 * 1024
+
 type scan struct {
 	e    map[int][]*Entry
 	errs chan error
@@ -53,13 +55,14 @@ func Scan(dirs []string) (map[int][]*Entry, error) {
 
 func scanner(s *scan) {
 	var (
+		buf       = make([]byte, bufferSize)
 		scanEntry *scanEntry
 		entry     *Entry
 		err       error
 	)
 
 	for scanEntry = range s.in {
-		entry, err = Parse(scanEntry.f)
+		entry, err = Parse(scanEntry.f, buf)
 		scanEntry.f.Close()
 		if err != nil {
 			s.errs <- err

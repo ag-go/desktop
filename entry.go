@@ -91,7 +91,7 @@ func unquoteExec(ex string) string {
 	return ex
 }
 
-func Parse(content io.Reader) (*Entry, error) {
+func Parse(content io.Reader, buf []byte) (*Entry, error) {
 	var (
 		scanner         = bufio.NewScanner(content)
 		scannedBytes    []byte
@@ -100,6 +100,8 @@ func Parse(content io.Reader) (*Entry, error) {
 		entry       = &Entry{}
 		foundHeader bool
 	)
+
+	scanner.Buffer(buf, len(buf))
 
 	for scanner.Scan() {
 		scannedBytes = bytes.TrimSpace(scanner.Bytes())
