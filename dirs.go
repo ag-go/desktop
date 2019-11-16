@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// DataDirs returns a slice of directories where desktop entries are stored.
 func DataDirs() []string {
 	var dataDirs []string
 

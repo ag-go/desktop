@@ -3,8 +3,6 @@
 [![builds.sr.ht status](https://builds.sr.ht/~tslocum/desktop.svg)](https://builds.sr.ht/~tslocum/desktop)
 [![Donate](https://img.shields.io/liberapay/receives/rocketnine.space.svg?logo=liberapay)](https://liberapay.com/rocketnine.space)
 
-Desktop application library
+Desktop entry scanner and parser
 
-## Warning: Experimental
-
-Linux is the only supported platform.  Windows support is planned.
+Linux is currently the only supported operating system.  Windows support is planned.

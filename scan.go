@@ -11,7 +11,7 @@ import (
 const bufferSize = 32 * 1024
 
 type scan struct {
-	e    map[int][]*Entry
+	e    [][]*Entry
 	errs chan error
 	in   chan *scanEntry
 	sync.Mutex
@@ -23,8 +23,10 @@ type scanEntry struct {
 	f *os.File
 }
 
-func Scan(dirs []string) (map[int][]*Entry, error) {
-	s := &scan{e: make(map[int][]*Entry), errs: make(chan error), in: make(chan *scanEntry)}
+// Scan non-recursively scans provided directories for desktop entry files and
+// parses them. A slice of parsed entries is returned for each directory.
+func Scan(dirs []string) ([][]*Entry, error) {
+	s := &scan{e: make([][]*Entry, len(dirs)), errs: make(chan error), in: make(chan *scanEntry)}
 
 	for i := 0; i < runtime.GOMAXPROCS(-1); i++ {
 		go scanner(s)

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// EntryType may be Application, Link or Directory.
 type EntryType int
 
 const (
@@ -60,18 +61,37 @@ var quotes = map[string]string{
 	`\\\\\\\\`:   `\\\\`,
 }
 
+// Entry represents a parsed desktop entry.
 type Entry struct {
-	Type        EntryType
-	Name        string
+	// Type is the type of the entry. It may be Application, Link or Directory.
+	Type EntryType
+
+	// Name is the name of the entry.
+	Name string
+
+	// GenericName is a generic description of the entry.
 	GenericName string
-	Comment     string
-	Icon        string
-	Path        string
-	Exec        string
-	URL         string
-	Terminal    bool
+
+	// Comment is extra information about the entry.
+	Comment string
+
+	// Icon is the path to an icon file or name of a themed icon.
+	Icon string
+
+	// Path is the directory to start in.
+	Path string
+
+	// Exec is the command(s) to be executed when launched.
+	Exec string
+
+	// URL is the URL to be visited when launched.
+	URL string
+
+	// Terminal controls whether to run in a terminal.
+	Terminal bool
 }
 
+// ExpandExec fills keywords in the provided entry's Exec with user arguments.
 func (e *Entry) ExpandExec(args string) string {
 	ex := e.Exec
 
@@ -91,6 +111,7 @@ func unquoteExec(ex string) string {
 	return ex
 }
 
+// Parse reads and parses a .desktop file into an *Entry.
 func Parse(content io.Reader, buf []byte) (*Entry, error) {
 	var (
 		scanner         = bufio.NewScanner(content)
