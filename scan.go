@@ -88,7 +88,10 @@ func scanFunc(i int, s *scan) filepath.WalkFunc {
 		s.Add(1)
 
 		go func() {
-			if err != nil {
+			if os.IsNotExist(err) {
+				s.Done()
+				return
+			} else if err != nil {
 				s.errs <- err
 				s.Done()
 				return
@@ -100,7 +103,10 @@ func scanFunc(i int, s *scan) filepath.WalkFunc {
 			}
 
 			f, err := os.OpenFile(path, os.O_RDONLY, 0644)
-			if err != nil {
+			if os.IsNotExist(err) {
+				s.Done()
+				return
+			} else if err != nil {
 				s.errs <- err
 				s.Done()
 				return
@@ -117,7 +123,9 @@ func scanDir(i int, dir string, s *scan) {
 	defer s.Done()
 
 	err := filepath.Walk(dir, scanFunc(i, s))
-	if err != nil {
+	if os.IsNotExist(err) {
+		return
+	} else if err != nil {
 		s.errs <- err
 	}
 }
