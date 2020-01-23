@@ -1,4 +1,4 @@
-module git.sr.ht/~tslocum/desktop
+module gitlab.com/tslocum/desktop
 
 go 1.12
 
