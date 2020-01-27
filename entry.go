@@ -13,11 +13,12 @@ import (
 // EntryType may be Application, Link or Directory.
 type EntryType int
 
+// All entry types
 const (
-	Unknown EntryType = iota
-	Application
-	Link
-	Directory
+	Unknown     EntryType = iota // Unspecified or unrecognized
+	Application                  // Execute command
+	Link                         // Open browser
+	Directory                    // Open file manager
 )
 
 func (t EntryType) String() string {

@@ -6,7 +6,9 @@ import (
 	"os"
 )
 
-func RunScript(ex string) (string, error) {
+// RunScript creates a temporary run script consisting of a bash script which
+// removes itself and executes the specified command.
+func RunScript(exec string) (string, error) {
 	runScript, err := ioutil.TempFile("", "run-*")
 	if err != nil {
 		return "", err
@@ -22,7 +24,7 @@ func RunScript(ex string) (string, error) {
 		runScript.Close()
 		return "", err
 	}
-	_, err = runScript.WriteString("exec " + ex + "\n")
+	_, err = runScript.WriteString("exec " + exec + "\n")
 	if err != nil {
 		runScript.Close()
 		return "", err
