@@ -3,11 +3,11 @@ package desktop
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // EntryType may be Application, Link or Directory.
@@ -20,6 +20,8 @@ const (
 	Link                         // Open browser
 	Directory                    // Open file manager
 )
+
+const sectionHeaderNotFoundError = "section header not found"
 
 func (t EntryType) String() string {
 	switch t {
@@ -119,12 +121,11 @@ func Parse(content io.Reader, buf []byte) (*Entry, error) {
 		scannedBytes    []byte
 		scannedBytesLen int
 
-		entry       = &Entry{}
+		entry       Entry
 		foundHeader bool
 	)
 
 	scanner.Buffer(buf, len(buf))
-
 	for scanner.Scan() {
 		scannedBytes = bytes.TrimSpace(scanner.Bytes())
 		scannedBytesLen = len(scannedBytes)
@@ -134,7 +135,7 @@ func Parse(content io.Reader, buf []byte) (*Entry, error) {
 		} else if scannedBytes[0] == byte('[') {
 			if !foundHeader {
 				if scannedBytesLen < 15 || !bytes.EqualFold(scannedBytes[0:15], entryHeader) {
-					return nil, errors.New("invalid desktop entry: section header not found")
+					return nil, errors.New(sectionHeaderNotFoundError)
 				}
 
 				foundHeader = true
@@ -171,11 +172,14 @@ func Parse(content io.Reader, buf []byte) (*Entry, error) {
 			return nil, nil
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "failed to parse desktop entry")
-	} else if !foundHeader {
-		return nil, errors.Wrap(err, "invalid desktop entry")
+
+	err := scanner.Err()
+	if err == nil && !foundHeader {
+		err = errors.New(sectionHeaderNotFoundError)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse desktop entry: %s", err)
 	}
 
-	return entry, nil
+	return &entry, nil
 }

@@ -13,5 +13,5 @@ Documentation is available via [gdooc](https://godoc.org/gitlab.com/tslocum/desk
 
 ## Support
 
-Please share issues/suggestions [here](https://gitlab.com/tslocum/desktop/issues).
+Please share issues and suggestions [here](https://gitlab.com/tslocum/desktop/issues).
 
