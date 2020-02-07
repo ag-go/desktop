@@ -9,12 +9,6 @@ fmt:
     - gofmt -l -s -e .
     - exit $(gofmt -l -s -e . | wc -l)
 
-lint:
-  stage: validate
-  script:
-    - go get -u golang.org/x/lint/golint
-    - golint -set_exit_status
-
 vet:
   stage: validate
   script:
