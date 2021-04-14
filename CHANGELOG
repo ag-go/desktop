@@ -1,3 +1,6 @@
+0.1.5:
+- Migrate to code.rocketnine.space
+
 0.1.4:
 - Remove dependency on pkg/errors
 
