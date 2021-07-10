@@ -1,6 +1,7 @@
 package desktop
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -83,49 +84,38 @@ func scanner(s *scan) {
 	}
 }
 
-func scanFunc(i int, s *scan) filepath.WalkFunc {
-	return func(path string, f os.FileInfo, err error) error {
-		s.Add(1)
-
-		go func() {
-			if os.IsNotExist(err) {
-				s.Done()
-				return
-			} else if err != nil {
-				s.errs <- err
-				s.Done()
-				return
-			}
-
-			if f == nil || f.IsDir() || !strings.HasSuffix(strings.ToLower(path), ".desktop") {
-				s.Done()
-				return
-			}
-
-			f, err := os.OpenFile(path, os.O_RDONLY, 0644)
-			if os.IsNotExist(err) {
-				s.Done()
-				return
-			} else if err != nil {
-				s.errs <- err
-				s.Done()
-				return
-			}
-
-			s.in <- &scanEntry{i: i, f: f}
-		}()
-
-		return nil
+func scanFile(i int, dir string, e os.DirEntry, s *scan) {
+	if e == nil || e.IsDir() || !strings.HasSuffix(strings.ToLower(e.Name()), ".desktop") {
+		s.Done()
+		return
 	}
+
+	f, err := os.OpenFile(filepath.Join(dir, e.Name()), os.O_RDONLY, 0644)
+	if os.IsNotExist(err) {
+		s.Done()
+		return
+	} else if err != nil {
+
+		s.errs <- err
+		s.Done()
+		return
+	}
+
+	s.in <- &scanEntry{i: i, f: f}
 }
 
 func scanDir(i int, dir string, s *scan) {
 	defer s.Done()
 
-	err := filepath.Walk(dir, scanFunc(i, s))
+	dirEntries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
 		return
 	} else if err != nil {
-		s.errs <- err
+		log.Fatal(err)
+	}
+
+	for _, dirEntry := range dirEntries {
+		s.Add(1)
+		go scanFile(i, dir, dirEntry, s)
 	}
 }

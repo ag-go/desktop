@@ -1,3 +1,6 @@
+0.1.6:
+- List directory entries using os.ReadDir instead of filepath.Walk
+
 0.1.5:
 - Migrate to code.rocketnine.space
 
